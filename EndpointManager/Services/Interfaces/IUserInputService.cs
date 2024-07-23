@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EndpointManager.Services;
+using System;
 
 namespace EndpointManager.Interfaces
 {
@@ -9,5 +10,9 @@ namespace EndpointManager.Interfaces
         bool TryGetEnumInput<T>(string prompt, out T result) where T : Enum;
         void DisplayMessage(string message);
         bool ConfirmAction(string prompt);
+        void PromptNewEndpoint();
+        void PromptEditEndpoint();
+        void PromptDeleteEndpoint();
+        void SetEndpointService(EndpointService endpointService);
     }
 }

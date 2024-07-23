@@ -1,8 +1,8 @@
 ﻿using EndpointManager.Enums;
-using EndpointManager.Exceptions;
 using EndpointManager.Interfaces;
 using EndpointManager.Model;
 using EndpointManager.Services;
+using Moq;
 using System.Collections.Generic;
 using Xunit;
 
@@ -10,7 +10,7 @@ namespace EndpointManager.Tests
 {
     public class EndpointServiceTests
     {
-        private static IUserInputService _mockUserInputService;
+        private static IUserInputService _userInputService;
         private readonly List<Endpoint> _endpoints;
         private readonly EndpointService _endpointService;
         private readonly Endpoint _initialEndpoint;
@@ -18,8 +18,9 @@ namespace EndpointManager.Tests
         // Constructor injection for dependencies
         public EndpointServiceTests()
         {
-            _mockUserInputService = new UserInputService();
             _endpoints = new List<Endpoint>();
+            //_mockUserInputService = new Mock<IUserInputService>();
+            _userInputService = ServiceFactory.CreateUserInputService(_endpoints);
             _initialEndpoint = new Endpoint
             {
                 SerialNumber = "12345",
@@ -28,7 +29,7 @@ namespace EndpointManager.Tests
                 MeterFirmwareVersion = "1.0",
                 SwitchState = States.Connected
             };
-            _endpointService = new EndpointService(_endpoints, _mockUserInputService);
+            _endpointService = new EndpointService(_endpoints, _userInputService);
         }
 
 
@@ -62,21 +63,12 @@ namespace EndpointManager.Tests
 
 
             // Act
-            _endpointService.EditEndpoint();
+            _endpointService.EditEndpoint(endpoint, States.Armed);
 
             // Assert
             Assert.Equal(States.Armed, endpoint.SwitchState);
         }
 
-        [Fact]
-        public void EditEndpoint_ShouldThrowException_WhenEndpointDoesNotExist()
-        {
-            // Arrange
-
-            // Act & Assert
-            var exception = Assert.Throws<EndpointNotFoundException>(() => _endpointService.EditEndpoint());
-            Assert.Equal("There is no endpoint with that serial number, please try again.", exception.Message);
-        }
 
         [Fact]
         public void DeleteEndpoint_ShouldRemoveEndpoint_WhenConfirmed()
@@ -87,61 +79,47 @@ namespace EndpointManager.Tests
 
 
             // Act
-            _endpointService.DeleteEndpoint();
+            _endpointService.DeleteEndpoint(endpoint);
 
             // Assert
             Assert.Empty(_endpoints);
         }
 
-        [Fact]
-        public void DeleteEndpoint_ShouldNotRemoveEndpoint_WhenNotConfirmed()
-        {
-            // Arrange
-            var endpoint = new Endpoint { SerialNumber = "123" };
-            _endpoints.Add(endpoint);
-
-
-            // Act
-            _endpointService.DeleteEndpoint();
-
-            // Assert
-            Assert.Single(_endpoints);
-        }
 
         [Fact]
-        public void ListAllEndpoints_ShouldDisplayAllEndpoints()
+        public void ListAllEndpoints_NoEndpoints_DisplaysNoEndpointsMessage()
         {
             // Arrange
             _endpoints.Add(new Endpoint { SerialNumber = "123" });
-
+            var mockUserInputService = new Mock<UserInputService>();
+            var endpoints = new List<Endpoint>();
+            var endpointService = new EndpointService(endpoints, mockUserInputService.Object);
 
             // Act
-            _endpointService.ListAllEndpoints();
+            endpointService.ListAllEndpoints();
 
             // Assert
+            mockUserInputService.Verify(service => service.DisplayMessage("There are no endpoints so far."), Times.Once);
         }
 
         [Fact]
-        public void FindEndpoint_ShouldDisplayEndpoint_WhenFound()
+        public void ListAllEndpoints_WithEndpoints_DisplaysEndpoints()
         {
             // Arrange
-            var endpoint = new Endpoint { SerialNumber = "123" };
-            _endpoints.Add(endpoint);
+            var mockUserInputService = new Mock<UserInputService>();
+            var endpoints = new List<Endpoint>
+        {
+            new Endpoint { SerialNumber = "123" },
+            new Endpoint { SerialNumber = "124" }
+        };
+            var endpointService = new EndpointService(endpoints, mockUserInputService.Object);
 
             // Act
-            _endpointService.FindEndpoint();
+            endpointService.ListAllEndpoints();
 
             // Assert
-        }
-
-        [Fact]
-        public void FindEndpoint_ShouldThrowException_WhenNotFound()
-        {
-            // Arrange
-
-            // Act & Assert
-            var exception = Assert.Throws<EndpointNotFoundException>(() => _endpointService.FindEndpoint());
-            Assert.Equal("There is no endpoint with that serial number, please try again.", exception.Message);
+            mockUserInputService.Verify(service => service.DisplayMessage("Here are the endpoints:"), Times.Once);
+            mockUserInputService.Verify(service => service.DisplayMessage("--------------------------"), Times.Exactly(endpoints.Count));
         }
     }
 }

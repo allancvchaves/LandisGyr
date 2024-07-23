@@ -54,6 +54,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Enums\States.cs" />
+    <Compile Include="Services\ServiceFactory.cs" />
     <Compile Include="Services\UserInputService.cs" />
   </ItemGroup>
   <ItemGroup>

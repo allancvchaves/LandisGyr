@@ -15,7 +15,7 @@ namespace EndpointManager
 
         static void Main(string[] args)
         {
-            userInputService = new UserInputService();
+            userInputService = ServiceFactory.CreateUserInputService(endpoints);
             endpointService = new EndpointService(endpoints, userInputService);
 
             bool continueRunning = true;
@@ -30,13 +30,13 @@ namespace EndpointManager
                         switch (option)
                         {
                             case 1:
-                                endpointService.GetInfoNewEndpoint();
+                                userInputService.PromptNewEndpoint();
                                 break;
                             case 2:
-                                endpointService.EditEndpoint();
+                                userInputService.PromptEditEndpoint();
                                 break;
                             case 3:
-                                endpointService.DeleteEndpoint();
+                                userInputService.PromptDeleteEndpoint();
                                 break;
                             case 4:
                                 endpointService.ListAllEndpoints();
